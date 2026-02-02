@@ -1,5 +1,5 @@
 <p align="center"><a href="https://www.1c-bitrix.ru/products/cms/" target="_blank">
-    <img src="logo.png" alt="1C-Bitrix Logo">
+    <img src="logo.png" alt="">
 </a></p>
 
 # 1C-Bitrix (БУС)
