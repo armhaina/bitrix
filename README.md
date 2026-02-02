@@ -1,3 +1,7 @@
+<p align="center"><a href="https://www.1c-bitrix.ru/products/cms/" target="_blank">
+    <img src="logo.png" alt="1C-Bitrix Logo">
+</a></p>
+
 # 1C-Bitrix (БУС)
 
 ✊ Образ для быстрого прототипирования актуальной версии [1C-Bitrix: Управление сайтом (БУС)][1] под соответствующую версию PHP.
