@@ -9,6 +9,7 @@ RUN set -eux; \
     chrpath \
     cron \
     curl \
+    dos2unix \
     g++ \
     gettext-base \
     ghostscript \

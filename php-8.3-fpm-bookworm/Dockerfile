@@ -6,6 +6,7 @@ RUN set -eux; \
     apache2-utils \
     cron \
     curl \
+    dos2unix \
     ffmpeg \
     freetype* \
     gettext-base \
