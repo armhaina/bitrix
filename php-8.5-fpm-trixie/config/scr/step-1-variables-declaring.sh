@@ -3,6 +3,7 @@
 APP_PATH=$(printenv APP_PATH)
 SERVER_NAME=$(printenv SERVER_NAME)
 BITRIX_VERSION=$(printenv BITRIX_VERSION)
+CRON_ENABLED=$(printenv CRON_ENABLED)
 
 if [ -z "$APP_PATH" ]; then
   alert_message "error" "Переменная APP_PATH не установлена"
