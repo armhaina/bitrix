@@ -40,6 +40,7 @@ RUN set -eux; \
 	rm -rf /var/lib/apt/lists/*
 
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+RUN curl -sL https://raw.githubusercontent.com/axllent/mailpit/develop/install.sh | sh
 
 RUN docker-php-ext-configure gd --enable-gd --with-freetype --with-jpeg; \
     docker-php-ext-install -j$(nproc) \

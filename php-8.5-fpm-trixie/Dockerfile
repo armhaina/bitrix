@@ -54,6 +54,7 @@ RUN set -eux; \
 	rm -rf /var/lib/apt/lists/*
 
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+RUN curl -sL https://raw.githubusercontent.com/axllent/mailpit/develop/install.sh | sh
 
 RUN docker-php-ext-configure intl; \
     docker-php-ext-configure imap --with-kerberos --with-imap-ssl; \
