@@ -13,9 +13,14 @@ RUN set -eux; \
     g++ \
     gettext-base \
     ghostscript \
+    ghostscript \
+    ghostscript-doc \
+    ghostscript-x \
+    gifsicle \
     git \
     imagemagick \
     iputils-ping \
+    jpegoptim \
     libcurl4-openssl-dev \
     libfontconfig1-dev \
     libfreetype6-dev \
@@ -42,16 +47,22 @@ RUN set -eux; \
     nodejs \
     npm \
     openssl \
+    optipng \
     poppler-utils \
     sendmail \
     supervisor \
     systemd \
+    texlive-extra-utils \
     unzip \
     wait-for-it \
+    webp \
     wget \
     zip \
     zlib1g-dev; \
 	rm -rf /var/lib/apt/lists/*
+
+RUN npm install -g svgo sharp svg2png svg-to-pdf imagemin-svgo svg2pdf
+RUN ln -s /usr/local/bin/svgo /usr/bin/svgo
 
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 RUN curl -sL https://raw.githubusercontent.com/axllent/mailpit/develop/install.sh | sh
