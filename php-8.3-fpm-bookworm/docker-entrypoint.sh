@@ -9,4 +9,5 @@ source /tmp/scr/step-5-bitrix-install.sh
 source /tmp/scr/step-6-bitrix-cache.sh
 source /tmp/scr/step-7-cron-configure.sh
 source /tmp/scr/step-8-mailpit-configure.sh
+source /tmp/scr/step-9-composer-install-packages.sh
 source /tmp/scr/step-final-supervisor-run.sh
