@@ -13,7 +13,6 @@ RUN set -eux; \
     g++ \
     gettext-base \
     ghostscript \
-    ghostscript \
     ghostscript-doc \
     ghostscript-x \
     gifsicle \
@@ -36,8 +35,10 @@ RUN set -eux; \
     libsodium-dev \
     libssh2-1-dev \
     libssl-dev \
+    libwebp-dev \
     libxft-dev \
     libxml2-dev \
+    libxpm-dev \
     libxslt-dev \
     libzip-dev \
     memcached \
@@ -69,7 +70,7 @@ RUN curl -sL https://raw.githubusercontent.com/axllent/mailpit/develop/install.s
 
 RUN docker-php-ext-configure intl; \
     docker-php-ext-configure imap --with-kerberos --with-imap-ssl; \
-    docker-php-ext-configure gd --enable-gd --with-freetype --with-jpeg; \
+    docker-php-ext-configure gd --enable-gd --with-freetype --with-jpeg --with-webp --with-xpm; \
     docker-php-ext-install -j$(nproc) \
     bcmath \
     exif \

@@ -28,11 +28,18 @@ RUN set -eux; \
     libmcrypt-dev \
     libmemcached-dev \
     libpng-dev \
+    libpq-dev \
+    libwebp-dev \
     libxml2-dev \
+    libxpm-dev \
+    libxslt1-dev \
     libzip-dev \
     memcached \
     nano \
     nginx \
+    nodejs \
+    npm \
+    openssl \
     optipng \
     poppler-utils \
     sendmail \
@@ -53,11 +60,23 @@ RUN ln -s /usr/local/bin/svgo /usr/bin/svgo
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 RUN curl -sL https://raw.githubusercontent.com/axllent/mailpit/develop/install.sh | sh
 
-RUN docker-php-ext-configure gd --enable-gd --with-freetype --with-jpeg; \
+RUN docker-php-ext-configure intl; \
+    docker-php-ext-configure imap --with-kerberos --with-imap-ssl; \
+    docker-php-ext-configure gd --enable-gd --with-freetype --with-jpeg --with-webp --with-xpm; \
     docker-php-ext-install -j$(nproc) \
+    bcmath \
+    exif \
     gd \
+    intl \
     mysqli \
-    opcache \
+    pcntl \
+    pdo \
+    pdo_mysql \
+    pdo_pgsql \
+    pgsql \
+    sockets \
+    xml \
+    xsl \
     zip
 
 RUN pecl install apcu; \
