@@ -19,8 +19,11 @@ RUN set -eux; \
     imagemagick \
     iputils-ping \
     jpegoptim \
+    libavif-dev \
     libc-client-dev \
     libfreetype6-dev \
+    libheif-dev \
+    libheif1 \
     libjpeg62-turbo-dev \
     libkrb5-dev \
     libmagickcore-dev \
@@ -78,6 +81,9 @@ RUN docker-php-ext-configure intl; \
     xml \
     xsl \
     zip
+
+RUN pecl install imagick; \
+    docker-php-ext-enable imagick
 
 RUN pecl install apcu; \
     docker-php-ext-enable apcu
