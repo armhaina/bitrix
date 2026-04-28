@@ -10,6 +10,7 @@ RUN set -eux; \
     cron \
     curl \
     dos2unix \
+    ffmpeg \
     g++ \
     gettext-base \
     ghostscript \
