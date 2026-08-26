@@ -1,0 +1,64 @@
+# Название workflow — так он отображается во вкладке Actions на GitHub
+name: Build containers
+
+# События, при которых запускается этот workflow
+on:
+  # Запуск при событиях pull request (аналог Merge Request)
+  pull_request:
+    # opened — PR только что создан
+    # synchronize — в PR запушили новые коммиты
+    # reopened — закрытый PR открыли снова
+    types: [opened, synchronize, reopened]
+
+# Минимальные права токена GITHUB_TOKEN: только чтение репозитория (checkout)
+permissions:
+  contents: read
+
+# Список задач (jobs), которые выполняются в этом workflow
+jobs:
+  # Идентификатор задачи — используется во внутренних ссылках workflow
+  build:
+    # Имя job в UI GitHub; ${{ matrix.image }} подставляет текущий образ из матрицы
+    name: Build ${{ matrix.image }}
+    # ОС раннера GitHub: свежий Ubuntu, на нём есть Docker
+    runs-on: ubuntu-latest
+    # Если сборка зависнет дольше 60 минут — job принудительно остановится
+    timeout-minutes: 60
+    # Как запускать несколько вариантов одной и той же job
+    strategy:
+      # false: падение одного образа не отменяет сборку второго
+      fail-fast: false
+      # Матрица: job повторится отдельно для каждого значения image
+      matrix:
+        # Список каталогов с Dockerfile — каждый станет отдельным параллельным job
+        image:
+          - php-8.3-fpm-bookworm
+          - php-8.5-fpm-trixie
+    # Последовательные шаги внутри job
+    steps:
+      # Человекочитаемое имя шага в логах Actions
+      - name: Checkout
+        # Официальный action: клонирует репозиторий на раннер
+        uses: actions/checkout@v5
+
+      - name: Set up Docker Buildx
+        # Подключает Buildx — современный сборщик Docker с кэшем и BuildKit
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build image
+        # Action для сборки образа; push отключён — только проверка, что Dockerfile собирается
+        uses: docker/build-push-action@v6
+        # Параметры этого action
+        with:
+          # Контекст сборки: каталог образа (COPY берёт файлы отсюда)
+          context: ./${{ matrix.image }}
+          # Путь к Dockerfile внутри этого каталога
+          file: ./${{ matrix.image }}/Dockerfile
+          # Не публиковать образ в registry — цель CI только проверить сборку
+          push: false
+          # Локальный тег образа, чтобы в логах было понятно, что собралось
+          tags: bitrix:${{ matrix.image }}
+          # Читать кэш слоёв из GitHub Actions Cache, отдельно для каждого образа (scope)
+          cache-from: type=gha,scope=${{ matrix.image }}
+          # Писать кэш слоёв обратно в GHA (mode=max — все промежуточные слои), чтобы следующие PR собирались быстрее
+          cache-to: type=gha,mode=max,scope=${{ matrix.image }}
