@@ -22,10 +22,11 @@ BITRIX_VERSIONS=(
   standard_encode
   small_business_encode
   business_encode
-  bitrix24_shop_encode
-  business_cluster_postgresql_encode
 )
 
-if ! printf '%s\n' "${BITRIX_VERSIONS[@]}" | grep -qFx "$BITRIX_VERSION"; then
-    BITRIX_VERSION="start_encode"
+if [ -z "$BITRIX_VERSION" ]; then
+  BITRIX_VERSION="start_encode"
+elif ! printf '%s\n' "${BITRIX_VERSIONS[@]}" | grep -qFx "$BITRIX_VERSION"; then
+  alert_message "error" "BITRIX_VERSION=$BITRIX_VERSION не соответствует допустимым значениям: ${BITRIX_VERSIONS[*]}"
+  exit 1
 fi
