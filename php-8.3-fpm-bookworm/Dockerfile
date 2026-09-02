@@ -1,6 +1,6 @@
 FROM php:8.3-fpm-bookworm
 
-# Buildx подставляет amd64 / arm64; нужен и для локальной сборки без --platform
+# Buildx подставляет архитектуру образа; нужен и для локальной сборки без --platform
 ARG TARGETARCH
 
 RUN set -eux; \
@@ -58,8 +58,7 @@ RUN set -eux; \
     zlib1g-dev; \
 	rm -rf /var/lib/apt/lists/*
 
-# svgo/sharp — JS; librsvg2-bin даёт rsvg-convert (SVG→PNG/PDF) на amd64 и arm64
-# svg2png (phantomjs) и svg2pdf (inkscape) на всех архитектурах QEMU не ставятся
+# svgo/sharp — JS; librsvg2-bin даёт rsvg-convert (SVG→PNG/PDF)
 RUN npm install -g svgo sharp imagemin-svgo svg-to-pdf
 RUN ln -s /usr/local/bin/svgo /usr/bin/svgo
 
