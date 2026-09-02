@@ -11,8 +11,7 @@ then
   unzip "/tmp/${BITRIX_VERSION}.zip" -d "$APP_PATH"
   rm -rf "/tmp/${BITRIX_VERSION}.zip"
 
-  # Установить полные права на все папки и файлы
-  cd "$APP_PATH" && chmod -R 777 .
+  chown -R www-data:www-data "$APP_PATH"
 
   DB_HOST=$(printenv DB_HOST)
   DB_USER=$(printenv DB_USER)
