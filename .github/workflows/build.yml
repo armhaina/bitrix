@@ -1,0 +1,151 @@
+# Название workflow — так он отображается во вкладке Actions на GitHub
+name: Build containers
+
+# События, при которых запускается этот workflow
+on:
+  # Заливка в main: собираем образ и публикуем в GitHub Container Registry
+  push:
+    branches: [main]
+  # Pull request: только проверяем, что Dockerfile собирается (без push)
+  pull_request:
+    # opened — PR только что создан
+    # synchronize — в PR запушили новые коммиты
+    # reopened — закрытый PR открыли снова
+    types: [opened, synchronize, reopened]
+
+# contents:read — checkout репозитория
+# packages:write — публикация образа в GitHub Container Registry (ghcr.io)
+permissions:
+  contents: read
+  packages: write
+
+# Список задач (jobs), которые выполняются в этом workflow
+jobs:
+  # Идентификатор задачи — используется во внутренних ссылках workflow
+  build:
+    # Имя job в UI GitHub; ${{ matrix.image }} подставляет текущий образ из матрицы
+    name: Build ${{ matrix.image }}
+    # ОС раннера GitHub: свежий Ubuntu, на нём есть Docker
+    runs-on: ubuntu-latest
+    # Если сборка зависнет дольше 60 минут — job принудительно остановится
+    timeout-minutes: 60
+    # Как запускать несколько вариантов одной и той же job
+    strategy:
+      # false: падение одного образа не отменяет сборку второго
+      fail-fast: false
+      # Матрица: job повторится отдельно для каждого значения image
+      matrix:
+        # Список каталогов с Dockerfile — каждый станет отдельным параллельным job
+        image:
+          - php-8.3-fpm-bookworm
+          - php-8.5-fpm-trixie
+    env:
+      # Адрес GitHub Container Registry
+      REGISTRY: ghcr.io
+      # Имя пакета совпадает с репозиторием: owner/repo
+      IMAGE_NAME: ${{ github.repository }}
+      # Публикуем только коммиты, залитые в ветку main (не PR)
+      PUSH_IMAGE: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    # Последовательные шаги внутри job
+    steps:
+      # Человекочитаемое имя шага в логах Actions
+      - name: Checkout
+        # Официальный action: клонирует репозиторий на раннер
+        uses: actions/checkout@v5
+        with:
+          # Полная история нужна, чтобы собрать описание изменений между коммитами
+          fetch-depth: 0
+
+      - name: Collect changelog
+        id: changelog
+        # Собираем список сообщений коммитов для описания образа в GHCR (до 512 символов)
+        run: |
+          set -euo pipefail
+
+          before="${{ github.event.before }}"
+          empty_sha="0000000000000000000000000000000000000000"
+
+          if [[ "${{ github.event_name }}" == "push" && -n "$before" && "$before" != "$empty_sha" ]] \
+            && git cat-file -e "${before}^{commit}" 2>/dev/null; then
+            log="$(git log --reverse --pretty=format:'%s' "${before}..${{ github.sha }}")"
+          else
+            log="$(git log -1 --pretty=format:'%s')"
+          fi
+
+          # Одна строка без переносов: GHCR показывает description как обычный текст
+          description="$(printf '%s' "$log" | tr '\n' '; ' | tr -d '\r' | head -c 500)"
+          if [[ -z "${description// }" ]]; then
+            description="1C-Bitrix ${{ matrix.image }}"
+          fi
+
+          {
+            echo "description<<EOF"
+            echo "$description"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+          echo "Описание образа: $description"
+
+      - name: Log in to GitHub Container Registry
+        # Логин нужен только перед публикацией; в PR этот шаг пропускается
+        if: env.PUSH_IMAGE == 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        # Подключает Buildx — современный сборщик Docker с кэшем и BuildKit
+        uses: docker/setup-buildx-action@v3
+
+      - name: Docker metadata
+        id: meta
+        # Теги и OCI-метаданные: описание изменений попадёт на страницу пакета в GHCR
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          flavor: |
+            latest=false
+          tags: |
+            type=raw,value=${{ matrix.image }}
+            type=sha,prefix=${{ matrix.image }}-,format=short
+          labels: |
+            org.opencontainers.image.title=bitrix ${{ matrix.image }}
+            org.opencontainers.image.description=${{ steps.changelog.outputs.description }}
+            org.opencontainers.image.licenses=MIT
+          annotations: |
+            org.opencontainers.image.description=${{ steps.changelog.outputs.description }}
+            org.opencontainers.image.licenses=MIT
+
+      - name: Build image
+        # Сборка образа; push включается только для ветки main
+        uses: docker/build-push-action@v6
+        with:
+          # Контекст сборки: каталог образа (COPY берёт файлы отсюда)
+          context: ./${{ matrix.image }}
+          # Путь к Dockerfile внутри этого каталога
+          file: ./${{ matrix.image }}/Dockerfile
+          # true на main — публикуем в ghcr.io; false на PR — только проверка сборки
+          push: ${{ env.PUSH_IMAGE == 'true' }}
+          # Теги вида ghcr.io/owner/repo:php-8.3-fpm-bookworm и ...-sha
+          tags: ${{ steps.meta.outputs.tags }}
+          # OCI-labels: title, description (changelog), license
+          labels: ${{ steps.meta.outputs.labels }}
+          # Аннотации манифеста — GHCR читает из них description пакета
+          annotations: ${{ steps.meta.outputs.annotations }}
+          # Без provenance, чтобы не создавать multi-arch index (один манифест на образ)
+          provenance: false
+          # Читать кэш слоёв из GitHub Actions Cache, отдельно для каждого образа (scope)
+          cache-from: type=gha,scope=${{ matrix.image }}
+          # Писать кэш слоёв обратно в GHA (mode=max — все промежуточные слои)
+          cache-to: type=gha,mode=max,scope=${{ matrix.image }}
+
+      - name: Publish summary
+        if: env.PUSH_IMAGE == 'true'
+        run: |
+          {
+            echo "### Опубликован \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ matrix.image }}\`"
+            echo
+            echo "**Изменения:** ${{ steps.changelog.outputs.description }}"
+          } >> "$GITHUB_STEP_SUMMARY"
