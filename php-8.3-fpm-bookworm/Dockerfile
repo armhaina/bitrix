@@ -11,12 +11,9 @@ RUN set -eux; \
     curl \
     dos2unix \
     ffmpeg \
-    freetype* \
     gettext-base \
     ghostscript \
-    ghostscript \
     ghostscript-doc \
-    ghostscript-x \
     gifsicle \
     git \
     imagemagick \
@@ -35,6 +32,7 @@ RUN set -eux; \
     libmemcached-dev \
     libpng-dev \
     libpq-dev \
+    librsvg2-bin \
     libwebp-dev \
     libxml2-dev \
     libxpm-dev \
@@ -60,12 +58,9 @@ RUN set -eux; \
     zlib1g-dev; \
 	rm -rf /var/lib/apt/lists/*
 
-# svg2png тянет phantomjs — готовые бинарники есть только для amd64
-RUN set -eux; \
-    npm install -g svgo sharp imagemin-svgo svg2pdf svg-to-pdf; \
-    if [ "${TARGETARCH:-$(dpkg --print-architecture)}" = "amd64" ]; then \
-      npm install -g svg2png; \
-    fi
+# svgo/sharp — JS; librsvg2-bin даёт rsvg-convert (SVG→PNG/PDF) на amd64 и arm64
+# svg2png (phantomjs) и svg2pdf (inkscape) на всех архитектурах QEMU не ставятся
+RUN npm install -g svgo sharp imagemin-svgo svg-to-pdf
 RUN ln -s /usr/local/bin/svgo /usr/bin/svgo
 
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer

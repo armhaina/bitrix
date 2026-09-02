@@ -32,6 +32,7 @@
 |:--------------------|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:----------|
 | APP_PATH            | Путь от корня до проекта внутри контейнера                                                                                                                                                                       | ✅         |
 | SERVER_NAME         | Хост вашего приложения                                                                                                                                                                                           | ✅         |
+| BITRIX_VERSION      | Редакция БУС: `start_encode` (по умолчанию), `standard_encode`, `small_business_encode`, `business_encode`, `bitrix24_shop_encode`, `business_cluster_postgresql_encode`                                          | ❌         |
 | APP_DEBUG           | Вкл/выкл режим дебага для БУС (1 - вкл., 0 - выкл.)                                                                                                                                                              | ❌         |
 | CRON_ENABLED        | Вкл/выкл CRON (1 - вкл.; раз в минуту; по умолчанию ВЫКЛЮЧЕНО): `bitrix/php_interface/cron_events.php`                                                                                                           | ❌         |
 | MAILPIT_ENABLED     | Вкл/выкл mailpit (1 - вкл.; по умолчанию ВЫКЛЮЧЕНО)                                                                                                                                                              | ❌         |
@@ -47,7 +48,8 @@
 
 ```
 APP_PATH=/pub/www/app  
-SERVER_NAME=app.local  
+SERVER_NAME=app.local
+BITRIX_VERSION=start_encode
   
 DB_USER=db_user
 DB_PASSWORD=db_password
@@ -152,13 +154,11 @@ services:
       - ./bx.cnf:/etc/mysql/conf.d/bx.cnf
 ```
 
-- 📄 Запустите сборку проекта командой из корня проекта. При первой установке **не используйте `-d`**: в консоли нужно выбрать версию БУС (Старт, Стандарт, Малый бизнес, Бизнес).
+- 📄 Запустите сборку проекта командой из корня проекта. Редакция БУС берётся из `BITRIX_VERSION` в `.env` (если не указана — `start_encode`).
 
 ```bash
-docker compose up --build --remove-orphans
+docker compose up -d --build --remove-orphans
 ```
-
-После установки Bitrix контейнер можно перезапускать уже в фоне: `docker compose up -d`.
 
 В логах контейнера `application` вам будет доступен процесс создания проекта. Завершением сборки можно считать появление
 фразы: `[УСПЕХ] Запускаем supervisord` на зеленом фоне (в логах контейнера `application`).
