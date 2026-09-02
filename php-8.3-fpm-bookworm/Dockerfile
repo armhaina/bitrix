@@ -99,9 +99,6 @@ COPY docker-entrypoint.sh /usr/local/bin/
 COPY config/conf/nginx.conf /etc/nginx/conf.d/nginx.conf
 COPY config/conf/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY config/ini/php.ini /usr/local/etc/php/conf.d/php.ini
-COPY config/ini/opcache-recommended.ini /usr/local/etc/php/conf.d/opcache-recommended.ini
-COPY config/ini/error-logging.ini /usr/local/etc/php/conf.d/error-logging.ini
-COPY config/ini/xdebug.ini /usr/local/etc/php/conf.d/xdebug.ini
 COPY config/scr /tmp/scr
 
 RUN sed -i 's/\r$//' /usr/local/bin/docker-entrypoint.sh; \
