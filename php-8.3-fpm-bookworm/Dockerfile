@@ -1,5 +1,8 @@
 FROM php:8.3-fpm-bookworm
 
+# Buildx подставляет amd64 / arm64; нужен и для локальной сборки без --platform
+ARG TARGETARCH
+
 RUN set -eux; \
 	apt-get update; \
 	apt-get install -y --no-install-recommends \
@@ -57,11 +60,20 @@ RUN set -eux; \
     zlib1g-dev; \
 	rm -rf /var/lib/apt/lists/*
 
-RUN npm install -g svgo sharp svg2png svg-to-pdf imagemin-svgo svg2pdf
+# svg2png тянет phantomjs — готовые бинарники есть только для amd64
+RUN set -eux; \
+    npm install -g svgo sharp imagemin-svgo svg2pdf svg-to-pdf; \
+    if [ "${TARGETARCH:-$(dpkg --print-architecture)}" = "amd64" ]; then \
+      npm install -g svg2png; \
+    fi
 RUN ln -s /usr/local/bin/svgo /usr/bin/svgo
 
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
-RUN curl -sL https://raw.githubusercontent.com/axllent/mailpit/develop/install.sh | sh
+RUN set -eux; \
+    arch="${TARGETARCH:-$(dpkg --print-architecture)}"; \
+    curl -fsSL "https://github.com/axllent/mailpit/releases/latest/download/mailpit-linux-${arch}.tar.gz" \
+      | tar -xz -C /usr/local/bin --no-same-owner mailpit; \
+    chmod +x /usr/local/bin/mailpit
 
 RUN docker-php-ext-configure intl; \
     docker-php-ext-configure imap --with-kerberos --with-imap-ssl; \
