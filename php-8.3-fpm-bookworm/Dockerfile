@@ -10,6 +10,7 @@ RUN set -eux; \
     apache2-utils \
     cron \
     curl \
+    default-mysql-client \
     dos2unix \
     ffmpeg \
     gettext-base \
@@ -105,7 +106,6 @@ RUN pecl install xdebug-3.5.0; \
 COPY docker-entrypoint.sh /usr/local/bin/
 COPY config/conf/nginx.conf /etc/nginx/conf.d/nginx.conf
 COPY config/conf/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
-COPY config/conf/zz-www-data.conf /usr/local/etc/php-fpm.d/zz-www-data.conf
 COPY config/ini/php.ini /usr/local/etc/php/conf.d/php.ini
 COPY config/scr /tmp/scr
 
