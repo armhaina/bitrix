@@ -1,11 +1,17 @@
 #!/bin/bash
-# Цветные статус-строки на всю ширину терминала.
+# Цветные статус-строки.
 # Чтобы в docker logs сразу было видно этап, предупреждение и ошибку.
 
 log() {
   local type=$1; shift
-  local cols=${COLUMNS:-$(tput cols 2>/dev/null || echo 80)}
-  local -A color=([error]='97;41' [warning]='30;43' [info]='97;44' [success]='97;42')
-  local -A tag=([error]='ОШИБКА' [warning]='ВНИМАНИЕ' [info]='…' [success]='ГОТОВО')
-  printf "\033[%sm%-*s\033[0m\n" "${color[$type]:-30;47}" "$cols" " [${tag[$type]:-}] $*"
+  local msg="$*" i
+  local -A color=([error]='31' [warning]='33' [info]='36' [success]='32')
+  local -A icon=([error]='❌' [warning]='⚠️' [info]='ℹ️' [success]='✅')
+  local from=(а б в г д е ё ж з и й к л м н о п р с т у ф х ц ч ш щ ъ ы ь э ю я)
+  local to=(А Б В Г Д Е Ё Ж З И Й К Л М Н О П Р С Т У Ф Х Ц Ч Ш Щ Ъ Ы Ь Э Ю Я)
+  msg="${msg^^}"
+  for i in "${!from[@]}"; do
+    msg="${msg//${from[i]}/${to[i]}}"
+  done
+  printf "\033[%sm%s %s\033[0m\n" "${color[$type]:-37}" "${icon[$type]:-}" "$msg"
 }
