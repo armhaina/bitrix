@@ -14,6 +14,8 @@ on:
     # reopened — закрытый PR открыли снова
     # closed — PR закрыт (при merge чистим registry)
     types: [opened, synchronize, reopened, closed]
+  # Удаление ветки: чистим образы этой ветки в registry (как после merge PR)
+  delete:
 
 # contents:read — checkout репозитория
 # packages:write — публикация и удаление образов в GitHub Container Registry (ghcr.io)
@@ -25,8 +27,8 @@ permissions:
 jobs:
   # Идентификатор задачи — используется во внутренних ссылках workflow
   build:
-    # На closed PR сборка не нужна — этим занимается job cleanup
-    if: github.event_name == 'push' || github.event.action != 'closed'
+    # Сборка только на push и на открытых PR; closed PR и delete обрабатывает job cleanup
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
     # Имя job в UI GitHub; ${{ matrix.image }} подставляет текущий образ из матрицы
     name: Build ${{ matrix.image }}
     # ОС раннера GitHub: свежий Ubuntu, на нём есть Docker
@@ -168,10 +170,12 @@ jobs:
             echo "**Изменения:** ${{ steps.changelog.outputs.description }}"
           } >> "$GITHUB_STEP_SUMMARY"
 
-  # После merge PR удаляем из registry все теги исходной (не default) ветки
+  # После merge PR или удаления ветки удаляем из registry все теги этой (не default) ветки
   cleanup:
-    name: Delete merged branch images
-    if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged
+    name: Delete branch images
+    if: >
+      (github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged)
+      || (github.event_name == 'delete' && github.event.ref_type == 'branch')
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
@@ -179,7 +183,8 @@ jobs:
       OWNER: ${{ github.repository_owner }}
       OWNER_TYPE: ${{ github.event.repository.owner.type }}
       PACKAGE: ${{ github.event.repository.name }}
-      HEAD_BRANCH: ${{ github.event.pull_request.head.ref }}
+      # delete: github.event.ref — короткое имя ветки; PR: head.ref исходной ветки
+      HEAD_BRANCH: ${{ github.event_name == 'delete' && github.event.ref || github.event.pull_request.head.ref }}
       DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
     steps:
       - name: Delete branch tags from GitHub Container Registry
@@ -187,7 +192,7 @@ jobs:
           set -euo pipefail
 
           if [[ "$HEAD_BRANCH" == "$DEFAULT_BRANCH" ]]; then
-            echo "Источник PR — default branch ($DEFAULT_BRANCH), стабильные теги не удаляем."
+            echo "Ветка — default ($DEFAULT_BRANCH), стабильные теги не удаляем."
             exit 0
           fi
 
