@@ -1,5 +1,7 @@
 # Пример первоначальной структуры для Bitrix (БУС) приложения
 
+Данный README.md описывает архитектуру окружения проекта и корректную настройку проекта под ваши требования.
+
 ## 🚀 Быстрый старт
 
 - ⬇️ Скачайте [example-app](.) (переименуйте раздел под ваш проект).
@@ -22,11 +24,11 @@
 | <a id="BITRIX_CRON_ENABLED"></a>[BITRIX_CRON_ENABLED](#BITRIX_CRON_ENABLED) | Вкл/выкл CRON (1 - вкл.; раз в минуту): `bitrix/php_interface/cron_events.php`. Допустимы только `0` или `1`                                                                                                        | ✅        |
 | <a id="MAILPIT_ENABLED"></a>[MAILPIT_ENABLED](#MAILPIT_ENABLED) | Вкл/выкл mailpit (1 - вкл.). Если задана — только `0` или `1`; любое другое значение — ошибка при старте контейнера                                                                                                 | ❌        |
 | <a id="MAILPIT_HOST"></a>[MAILPIT_HOST](#MAILPIT_HOST) | Хост mailpit. Обязательна, если [`MAILPIT_ENABLED`](#MAILPIT_ENABLED)=1                                                                                                                                                                 | ❌        |
-| <a id="BUILD_BITRIX_VERSION"></a>[BUILD_BITRIX_VERSION](#BUILD_BITRIX_VERSION) | [Редакция БУС](https://www.1c-bitrix.ru/download/cms.php#tab-subsection-3): `start_encode` (по умолчанию), `standard_encode`, `small_business_encode`, `business_encode`. Любое другое значение — ошибка при старте контейнера | ❌        |
+| <a id="BUILD_BITRIX_VERSION"></a>[BUILD_BITRIX_VERSION](#BUILD_BITRIX_VERSION) | [Редакция БУС](https://www.1c-bitrix.ru/download/cms.php#tab-subsection-3): `start_encode` (по умолчанию), `standard_encode`, `small_business_encode`, `business_encode`. Любое другое значение — ошибка при старте контейнера. Переменная нужна только на этапе создания нового проекта, после сборки проекта переменную можно удалить из `.env` | ❌        |
 
 ### Установка 1C-Bitrix (БУС)
 
-😎 Если сборка проекта успешно завершена, то можете перейти на страницу `http://APP_HOST` (заменить [**APP_HOST**](#APP_HOST) на хост из `.env` файла). Вы должны увидеть стартовую страницу установки `БУС`.
+😎 После успешной сбоорки проекта можете перейти на страницу `http://APP_HOST` (заменить [**APP_HOST**](#APP_HOST) на хост из `.env` файла). Вы должны увидеть стартовую страницу установки `БУС`.
 
 1. На странице `Предварительная проверка` все обязательные параметры и доступы к диску должны быть выделены зеленым
    цветом.
