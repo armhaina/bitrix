@@ -25,10 +25,60 @@ permissions:
 
 # Список задач (jobs), которые выполняются в этом workflow
 jobs:
-  # Идентификатор задачи — используется во внутренних ссылках workflow
-  build:
+  # Сканируем корень репозитория: каждый каталог php-* — отдельный образ.
+  # Так не нужно править workflow при добавлении или удалении образов.
+  discover:
     # Сборка только на push и на открытых PR; closed PR и delete обрабатывает job cleanup
     if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
+    name: Discover images
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Collect php-* image directories
+        id: set-matrix
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+
+          images=()
+          for dir in php-*/; do
+            name="${dir%/}"
+            if [[ -d "$name" ]]; then
+              images+=("$name")
+            fi
+          done
+
+          if [[ ${#images[@]} -eq 0 ]]; then
+            echo "Не найдены каталоги образов, имя которых начинается с php-"
+            exit 1
+          fi
+
+          mapfile -t images < <(printf '%s\n' "${images[@]}" | sort)
+
+          echo "Найдены образы:"
+          printf '  - %s\n' "${images[@]}"
+
+          matrix="$(
+            printf '%s\n' "${images[@]}" | jq -R -s -c '
+              {
+                include: split("\n")
+                  | map(select(length > 0))
+                  | map({image: ., platforms: "linux/amd64"})
+              }
+            '
+          )"
+
+          echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
+          echo "Матрица: $matrix"
+
+  # Идентификатор задачи — используется во внутренних ссылках workflow
+  build:
+    needs: discover
     # Имя job в UI GitHub; ${{ matrix.image }} подставляет текущий образ из матрицы
     name: Build ${{ matrix.image }}
     # ОС раннера GitHub: свежий Ubuntu, на нём есть Docker
@@ -38,13 +88,8 @@ jobs:
     strategy:
       # false: падение одного образа не отменяет сборку второго
       fail-fast: false
-      # Матрица: job повторится отдельно для каждого значения image
-      matrix:
-        include:
-          - image: php-8.3-fpm-bookworm
-            platforms: linux/amd64
-          - image: php-8.5-fpm-trixie
-            platforms: linux/amd64
+      # Матрица собирается job discover из каталогов php-*
+      matrix: ${{ fromJSON(needs.discover.outputs.matrix) }}
     env:
       # Адрес GitHub Container Registry
       REGISTRY: ghcr.io
@@ -187,9 +232,13 @@ jobs:
       HEAD_BRANCH: ${{ github.event_name == 'delete' && github.event.ref || github.event.pull_request.head.ref }}
       DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
     steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
       - name: Delete branch tags from GitHub Container Registry
         run: |
           set -euo pipefail
+          shopt -s nullglob
 
           if [[ "$HEAD_BRANCH" == "$DEFAULT_BRANCH" ]]; then
             echo "Ветка — default ($DEFAULT_BRANCH), стабильные теги не удаляем."
@@ -207,8 +256,22 @@ jobs:
             exit 0
           fi
 
-          # Должен совпадать с matrix.image в job build
-          images=(php-8.3-fpm-bookworm php-8.5-fpm-trixie)
+          # Те же каталоги php-*, что собирает job discover / build
+          images=()
+          for dir in php-*/; do
+            name="${dir%/}"
+            if [[ -d "$name" ]]; then
+              images+=("$name")
+            fi
+          done
+
+          if [[ ${#images[@]} -eq 0 ]]; then
+            echo "Каталоги php-* не найдены — удалять нечего."
+            exit 0
+          fi
+
+          mapfile -t images < <(printf '%s\n' "${images[@]}" | sort)
+          echo "Образы для очистки: ${images[*]}"
 
           package_lower="$(printf '%s' "$PACKAGE" | tr '[:upper:]' '[:lower:]')"
           package_enc="$(printf '%s' "$package_lower" | jq -sRr @uri | sed 's/%0A$//')"
