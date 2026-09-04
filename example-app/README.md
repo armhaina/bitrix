@@ -48,6 +48,8 @@ include_once dirname(dirname(__DIR__)) . '/vendor/autoload.php';
 
 ### ⚙️ Проставить переменные .env в конфиги
 
+#### Доступы СУБД для 1C-Bitrix через переменные окружения
+
 👇 В файле `/bitrix/.settings.php` заменить ([DB_HOST](#DB_HOST), [DB_DATABASE](#DB_DATABASE), [DB_USER](#DB_USER), [DB_PASSWORD](#DB_PASSWORD)). Это для того чтобы 1C-Bitrix всегда имел коректное подклчение к СУБД, даже если вы поменяете значения переменных в `.env`.
 
 ```php
@@ -58,6 +60,8 @@ include_once dirname(dirname(__DIR__)) . '/vendor/autoload.php';
   'password' => $_ENV["DB_PASSWORD"],
 ];
 ```
+
+#### Настройка логирования через переменные окружения
 
 👇 В файле `.env` вы можете указать переменную, например `APP_DEBUG` со значением `0` или `1` для переключения режима отладки и добавить в файл `/bitrix/.settings.php` и в файл `/bitrix/php_interface/dbconn.php`.
 
