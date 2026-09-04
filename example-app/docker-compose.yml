@@ -13,9 +13,9 @@ services:
     volumes:
       - ./app:${APP_PATH}
     depends_on:
-      - database
+      - mariadb
 
-  database:
+  mariadb:
     image: mariadb
     environment:
       MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
@@ -25,8 +25,8 @@ services:
     ports:
       - '3306:3306'
     volumes:
-      - ./docker/database/db.sql:/docker-entrypoint-initdb.d/db.sql
-      - ./docker/database/bx.cnf:/etc/mysql/conf.d/bx.cnf
+      - ./docker/mariadb/db.sql:/docker-entrypoint-initdb.d/db.sql
+      - ./docker/mariadb/bx.cnf:/etc/mysql/conf.d/bx.cnf
     command: >
       bash -c "
         chmod 644 /etc/mysql/conf.d/bx.cnf &&
