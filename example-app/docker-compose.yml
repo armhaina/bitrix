@@ -13,9 +13,9 @@ services:
     volumes:
       - ./app:${APP_PATH}
     depends_on:
-      - mariadb
+      - database
 
-  mariadb:
+  database:
     image: mariadb
     environment:
       MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
