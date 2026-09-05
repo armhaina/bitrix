@@ -80,9 +80,9 @@ $DBDebugToFile = (bool)$_ENV["APP_DEBUG"];
 
 ### Тетирование и рефакторинг
 
-1. [rector](https://github.com/rectorphp/rector) — мгновенные обновления и автоматический рефакторинг
-2. [php-cs-fixer](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer) — рефакторинг кода по определенным правилам
-3. [phpstan](https://github.com/phpstan/phpstan) — PHPStan сканирует всю вашу кодовую базу в поисках как очевидных, так и сложных ошибок. Даже в тех редко используемых операторах if, которые точно не покрываются тестами.
+1. [rector](https://github.com/rectorphp/rector) — Мгновенные обновления и автоматический рефакторинг. Пример [конфига](attachment/configs/rector.php) (распложить в корне проекта).
+2. [php-cs-fixer](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer) — Рефакторинг кода по определенным правилам. Пример [конфига](attachment/configs/.php-cs-fixer.dist.php) (распложить в корне проекта).
+3. [phpstan](https://github.com/phpstan/phpstan) — PHPStan сканирует всю вашу кодовую базу в поисках как очевидных, так и сложных ошибок. Даже в тех редко используемых операторах if, которые точно не покрываются тестами. Пример [конфига](attachment/configs/phpstan.neon) (распложить в корне проекта).
 
 ### Миграции БД
 
@@ -111,14 +111,17 @@ node_modules/.bin/lefthook install
 ```yaml
 pre-commit:
   commands:
+    # ПРИ УСЛОВИИ ЧТО УСТАНОВЛЕН ПАКЕТ PHPSTAN:
     phpstan:
       priority: 1
       run: make phpstan
-
+    
+    # ПРИ УСЛОВИИ ЧТО УСТАНОВЛЕН ПАКЕТ RECTOR:
     rector:
       priority: 2
       run: make rector && git add {staged_files}
 
+    # ПРИ УСЛОВИИ ЧТО УСТАНОВЛЕН ПАКЕТ PHPCS:
     phpcs:
       priority: 3
       run: make phpcs && git add {staged_files}
