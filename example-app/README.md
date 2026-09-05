@@ -70,29 +70,29 @@ $DBDebug = (bool)$_ENV["APP_DEBUG"];
 $DBDebugToFile = (bool)$_ENV["APP_DEBUG"];
 ```
 
-## Полезные пакета и документация
+# Полезные пакета и документация
 
-### Документация
+## Документация
 
 1. [Роутинг](https://docs.1c-bitrix.ru/pages/framework/routing.html)
 
-### Пакеты
+## Пакеты
 
-#### Тетирование и рефакторинг
+### Тетирование и рефакторинг
 
 1. [rector](https://github.com/rectorphp/rector) — мгновенные обновления и автоматический рефакторинг
 2. [php-cs-fixer](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer) — рефакторинг кода по определенным правилам
 3. [phpstan](https://github.com/phpstan/phpstan) — PHPStan сканирует всю вашу кодовую базу в поисках как очевидных, так и сложных ошибок. Даже в тех редко используемых операторах if, которые точно не покрываются тестами.
 
-#### Миграции БД
+### Миграции БД
 
 1. [sprint.migration](https://github.com/andreyryabin/sprint.migration) — Миграции БД
 
-#### Lefthook (git)
+### Lefthook (git)
 
 **Lefthook** — это инструмент для управления Git-хуками.
 
-- Установить [Node.js](https://nodejs.org/en/download)   
+- Установить [Node.js](https://nodejs.org/en/download)
 - В корне проекта запустить команду, которая установит пакет `lefthook`
 
 ```bash
@@ -106,10 +106,7 @@ node_modules/.bin/lefthook install
 ```
 
 - Залить изменения в ваш Git репозиторий
-
-# Конфигурация
-
-## PHP
+- Файл lefthook изменить следующим образом (При каждом `git push` автоматически проверяет и рефакторит код):
 
 ```yaml
 pre-commit:
