@@ -82,9 +82,9 @@ $DBDebugToFile = (bool)$_ENV["APP_DEBUG"];
 
 ### Тетирование и рефакторинг
 
-1. [rector](https://github.com/rectorphp/rector) — Мгновенные обновления и автоматический рефакторинг. Пример [конфига](attachment/configs/rector.php) (распложить в корне проекта).
-2. [php-cs-fixer](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer) — Рефакторинг кода по определенным правилам. Пример [конфига](attachment/configs/.php-cs-fixer.dist.php) (распложить в корне проекта).
-3. [phpstan](https://github.com/phpstan/phpstan) — PHPStan сканирует всю вашу кодовую базу в поисках как очевидных, так и сложных ошибок. Даже в тех редко используемых операторах if, которые точно не покрываются тестами. Пример [конфига](attachment/configs/phpstan.neon) (распложить в корне проекта).
+1. [rector](https://github.com/rectorphp/rector) — Мгновенные обновления и автоматический рефакторинг. Пример [конфига](attachment/configs/rector.php) (расположить в корне проекта).
+2. [php-cs-fixer](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer) — Рефакторинг кода по определенным правилам. Пример [конфига](attachment/configs/.php-cs-fixer.dist.php) (расположить в корне проекта).
+3. [phpstan](https://github.com/phpstan/phpstan) — PHPStan сканирует всю вашу кодовую базу в поисках как очевидных, так и сложных ошибок. Даже в тех редко используемых операторах if, которые точно не покрываются тестами. Пример [конфига](attachment/configs/phpstan.neon) (расположить в корне проекта).
 
 ### Миграции БД
 
