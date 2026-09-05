@@ -70,7 +70,7 @@ $DBDebug = (bool)$_ENV["APP_DEBUG"];
 $DBDebugToFile = (bool)$_ENV["APP_DEBUG"];
 ```
 
-# Полезные пакета и документация
+# Полезные пакеты и документация
 
 ## Документация
 
