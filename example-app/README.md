@@ -35,8 +35,8 @@
 3. На странице [Создание базы данных](attachment/4-page-database-creating.png) указать следующие данные: `Сервер` (название вашего контейнера СУБД; значение из переменной [DB_HOST](#DB_HOST)), `Имя пользователя` (значение из переменной [DB_USER](#DB_USER)), `Пароль` (значение из переменной [DB_PASSWORD](#DB_PASSWORD)), `Имя базы данных` (значение из переменной [DB_DATABASE](#DB_DATABASE)).
 4. На странице [Выберите решение для установки](attachment/5-page-choose-installation-solution.png) выберите любой из готовых шаблонов (НЕ рекомендуется использовать `Загрузить из Маркетплейс`, так как это расширения от сторонних разработчиков и могут содержать ошибки).
 5. После установки БУС вы попадете на главную страницу вашего сайта с предустановленным шаблоном. Для перехода в админ-панель БУС перейдите на страницу `http://APP_HOST/bitrix` (хост — [APP_HOST](#APP_HOST)).
-6. 🔥 **БУС** успешно установлен!
-7. В начало файлов `/bitrix/.settings.php` и `/bitrix/php_interface/dbconn.php` добавьте строку с подключением автозагрузчика из папки `vendor` (даже если нет папки vendor и composer.json) в корне проекта. Это нужно для того чтобы 1C-Bitrix видел пакеты `composer.json` в корне проекта.
+6. В начало файлов `/bitrix/.settings.php` и `/bitrix/php_interface/dbconn.php` добавьте строку с подключением автозагрузчика из папки `vendor` (даже если нет папки vendor и composer.json) в корне проекта. Это нужно для того чтобы 1C-Bitrix видел пакеты `composer.json` в корне проекта.
+7. 🔥 **БУС** успешно установлен!
 
 ```php
 include_once dirname(dirname(__DIR__)) . '/vendor/autoload.php';
@@ -74,6 +74,63 @@ include_once dirname(dirname(__DIR__)) . '/vendor/autoload.php';
 ```php
 $DBDebug = (bool)$_ENV["APP_DEBUG"];
 $DBDebugToFile = (bool)$_ENV["APP_DEBUG"];
+```
+
+## Полезные пакета и документация
+
+### Документация
+
+1. [Роутинг](https://docs.1c-bitrix.ru/pages/framework/routing.html)
+
+### Пакеты
+
+#### Тетирование и рефакторинг
+
+1. [rector](https://github.com/rectorphp/rector) — мгновенные обновления и автоматический рефакторинг
+2. [php-cs-fixer](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer) — рефакторинг кода по определенным правилам
+3. [phpstan](https://github.com/phpstan/phpstan) — PHPStan сканирует всю вашу кодовую базу в поисках как очевидных, так и сложных ошибок. Даже в тех редко используемых операторах if, которые точно не покрываются тестами.
+
+#### Миграции БД
+
+1. [sprint.migration](https://github.com/andreyryabin/sprint.migration) — Миграции БД
+
+#### Lefthook (git)
+
+**Lefthook** — это инструмент для управления Git-хуками.
+
+- Установить [Node.js](https://nodejs.org/en/download)   
+- В корне проекта запустить команду, которая установит пакет `lefthook`
+
+```bash
+npm install lefthook --save-dev
+```
+
+- В корне проекта запустить команду, которая настроит `git hooks` из файла `lefthook.yml`
+
+```bash
+node_modules/.bin/lefthook install
+```
+
+- Залить изменения в ваш Git репозиторий
+
+# Конфигурация
+
+## PHP
+
+```yaml
+pre-commit:
+  commands:
+    phpstan:
+      priority: 1
+      run: make phpstan
+
+    rector:
+      priority: 2
+      run: make rector && git add {staged_files}
+
+    phpcs:
+      priority: 3
+      run: make phpcs && git add {staged_files}
 ```
 
 [1]: https://www.1c-bitrix.ru/products/cms
