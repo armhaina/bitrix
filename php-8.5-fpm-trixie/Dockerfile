@@ -1,33 +1,30 @@
 FROM php:8.5-fpm-trixie
 
+# Buildx подставляет архитектуру образа; нужен и для локальной сборки без --platform
+ARG TARGETARCH
+
 RUN set -eux; \
 	apt-get update; \
 	apt-get install -y --no-install-recommends \
     acl \
     apache2-utils \
-    build-essential \
-    chrpath \
     cron \
     curl \
+    default-mysql-client \
     dos2unix \
     ffmpeg \
-    g++ \
     gettext-base \
     ghostscript \
     ghostscript-doc \
-    ghostscript-x \
     gifsicle \
     git \
     imagemagick \
     iputils-ping \
     jpegoptim \
     libavif-dev \
-    libcurl4-openssl-dev \
-    libfontconfig1-dev \
     libfreetype6-dev \
     libheif-dev \
     libheif-plugins-all \
-    libicu-dev \
     libjpeg62-turbo-dev \
     libkrb5-dev \
     libmagickcore-dev \
@@ -36,18 +33,14 @@ RUN set -eux; \
     libmemcached-dev \
     libpng-dev \
     libpq-dev \
-    libsodium-dev \
-    libssh2-1-dev \
-    libssl-dev \
+    librsvg2-bin \
     libwebp-dev \
-    libxft-dev \
     libxml2-dev \
     libxpm-dev \
-    libxslt-dev \
+    libxslt1-dev \
     libzip-dev \
     memcached \
     nano \
-    neowofetch \
     nginx \
     nodejs \
     npm \
@@ -66,14 +59,19 @@ RUN set -eux; \
     zlib1g-dev; \
 	rm -rf /var/lib/apt/lists/*
 
-RUN npm install -g svgo sharp svg2png svg-to-pdf imagemin-svgo svg2pdf
+# svgo/sharp — JS; librsvg2-bin даёт rsvg-convert (SVG→PNG/PDF)
+RUN npm install -g svgo sharp imagemin-svgo svg-to-pdf
 RUN ln -s /usr/local/bin/svgo /usr/bin/svgo
 
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
-RUN curl -sL https://raw.githubusercontent.com/axllent/mailpit/develop/install.sh | sh
+RUN set -eux; \
+    arch="${TARGETARCH:-$(dpkg --print-architecture)}"; \
+    curl -fsSL "https://github.com/axllent/mailpit/releases/latest/download/mailpit-linux-${arch}.tar.gz" \
+      | tar -xz -C /usr/local/bin --no-same-owner mailpit; \
+    chmod +x /usr/local/bin/mailpit
 
+# imap: libc-client-dev нет в Debian Trixie, расширение IMAP в PHP 8.5 — PECL
 RUN docker-php-ext-configure intl; \
-    docker-php-ext-configure imap --with-kerberos --with-imap-ssl; \
     docker-php-ext-configure gd --enable-gd --with-freetype --with-jpeg --with-webp --with-xpm; \
     docker-php-ext-install -j$(nproc) \
     bcmath \
@@ -108,9 +106,6 @@ COPY docker-entrypoint.sh /usr/local/bin/
 COPY config/conf/nginx.conf /etc/nginx/conf.d/nginx.conf
 COPY config/conf/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY config/ini/php.ini /usr/local/etc/php/conf.d/php.ini
-COPY config/ini/opcache-recommended.ini /usr/local/etc/php/conf.d/opcache-recommended.ini
-COPY config/ini/error-logging.ini /usr/local/etc/php/conf.d/error-logging.ini
-COPY config/ini/xdebug.ini /usr/local/etc/php/conf.d/xdebug.ini
 COPY config/scr /tmp/scr
 
 RUN sed -i 's/\r$//' /usr/local/bin/docker-entrypoint.sh; \

@@ -14,6 +14,8 @@ on:
     # reopened — закрытый PR открыли снова
     # closed — PR закрыт (при merge чистим registry)
     types: [opened, synchronize, reopened, closed]
+  # Удаление ветки: чистим образы этой ветки в registry (как после merge PR)
+  delete:
 
 # contents:read — checkout репозитория
 # packages:write — публикация и удаление образов в GitHub Container Registry (ghcr.io)
@@ -23,28 +25,71 @@ permissions:
 
 # Список задач (jobs), которые выполняются в этом workflow
 jobs:
+  # Сканируем корень репозитория: каждый каталог php-* — отдельный образ.
+  # Так не нужно править workflow при добавлении или удалении образов.
+  discover:
+    # Сборка только на push и на открытых PR; closed PR и delete обрабатывает job cleanup
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
+    name: Discover images
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Collect php-* image directories
+        id: set-matrix
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+
+          images=()
+          for dir in php-*/; do
+            name="${dir%/}"
+            if [[ -d "$name" ]]; then
+              images+=("$name")
+            fi
+          done
+
+          if [[ ${#images[@]} -eq 0 ]]; then
+            echo "Не найдены каталоги образов, имя которых начинается с php-"
+            exit 1
+          fi
+
+          mapfile -t images < <(printf '%s\n' "${images[@]}" | sort)
+
+          echo "Найдены образы:"
+          printf '  - %s\n' "${images[@]}"
+
+          matrix="$(
+            printf '%s\n' "${images[@]}" | jq -R -s -c '
+              {
+                include: split("\n")
+                  | map(select(length > 0))
+                  | map({image: ., platforms: "linux/amd64"})
+              }
+            '
+          )"
+
+          echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
+          echo "Матрица: $matrix"
+
   # Идентификатор задачи — используется во внутренних ссылках workflow
   build:
-    # На closed PR сборка не нужна — этим занимается job cleanup
-    if: github.event_name == 'push' || github.event.action != 'closed'
+    needs: discover
     # Имя job в UI GitHub; ${{ matrix.image }} подставляет текущий образ из матрицы
     name: Build ${{ matrix.image }}
     # ОС раннера GitHub: свежий Ubuntu, на нём есть Docker
     runs-on: ubuntu-latest
-    # Multi-arch (QEMU) сборка PHP-расширений дольше обычной
-    timeout-minutes: 120
+    timeout-minutes: 60
     # Как запускать несколько вариантов одной и той же job
     strategy:
       # false: падение одного образа не отменяет сборку второго
       fail-fast: false
-      # Матрица: job повторится отдельно для каждого значения image
-      matrix:
-        include:
-          # linux/amd64 — серверы Intel/AMD; linux/arm64 — Apple Silicon и ARM-облака
-          - image: php-8.3-fpm-bookworm
-            platforms: linux/amd64,linux/arm64
-          - image: php-8.5-fpm-trixie
-            platforms: linux/amd64
+      # Матрица собирается job discover из каталогов php-*
+      matrix: ${{ fromJSON(needs.discover.outputs.matrix) }}
     env:
       # Адрес GitHub Container Registry
       REGISTRY: ghcr.io
@@ -101,13 +146,6 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Set up QEMU
-        # Эмуляция чужих архитектур на ubuntu-latest (amd64), нужна только для multi-arch
-        if: contains(matrix.platforms, ',')
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: arm64
-
       - name: Set up Docker Buildx
         # Подключает Buildx — современный сборщик Docker с кэшем, BuildKit и manifest list
         uses: docker/setup-buildx-action@v3
@@ -144,7 +182,7 @@ jobs:
           context: ./${{ matrix.image }}
           # Путь к Dockerfile внутри этого каталога
           file: ./${{ matrix.image }}/Dockerfile
-          # Несколько платформ → Buildx собирает manifest list (один тег, несколько архитектур)
+          # Нативная архитектура раннера (ubuntu-latest → linux/amd64), без QEMU
           platforms: ${{ matrix.platforms }}
           # true на push — публикуем в ghcr.io; false на PR — только проверка сборки
           push: ${{ env.PUSH_IMAGE == 'true' }}
@@ -177,10 +215,12 @@ jobs:
             echo "**Изменения:** ${{ steps.changelog.outputs.description }}"
           } >> "$GITHUB_STEP_SUMMARY"
 
-  # После merge PR удаляем из registry все теги исходной (не default) ветки
+  # После merge PR или удаления ветки удаляем из registry все теги этой (не default) ветки
   cleanup:
-    name: Delete merged branch images
-    if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged
+    name: Delete branch images
+    if: >
+      (github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged)
+      || (github.event_name == 'delete' && github.event.ref_type == 'branch')
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
@@ -188,15 +228,20 @@ jobs:
       OWNER: ${{ github.repository_owner }}
       OWNER_TYPE: ${{ github.event.repository.owner.type }}
       PACKAGE: ${{ github.event.repository.name }}
-      HEAD_BRANCH: ${{ github.event.pull_request.head.ref }}
+      # delete: github.event.ref — короткое имя ветки; PR: head.ref исходной ветки
+      HEAD_BRANCH: ${{ github.event_name == 'delete' && github.event.ref || github.event.pull_request.head.ref }}
       DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
     steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
       - name: Delete branch tags from GitHub Container Registry
         run: |
           set -euo pipefail
+          shopt -s nullglob
 
           if [[ "$HEAD_BRANCH" == "$DEFAULT_BRANCH" ]]; then
-            echo "Источник PR — default branch ($DEFAULT_BRANCH), стабильные теги не удаляем."
+            echo "Ветка — default ($DEFAULT_BRANCH), стабильные теги не удаляем."
             exit 0
           fi
 
@@ -211,8 +256,22 @@ jobs:
             exit 0
           fi
 
-          # Должен совпадать с matrix.image в job build
-          images=(php-8.3-fpm-bookworm php-8.5-fpm-trixie)
+          # Те же каталоги php-*, что собирает job discover / build
+          images=()
+          for dir in php-*/; do
+            name="${dir%/}"
+            if [[ -d "$name" ]]; then
+              images+=("$name")
+            fi
+          done
+
+          if [[ ${#images[@]} -eq 0 ]]; then
+            echo "Каталоги php-* не найдены — удалять нечего."
+            exit 0
+          fi
+
+          mapfile -t images < <(printf '%s\n' "${images[@]}" | sort)
+          echo "Образы для очистки: ${images[*]}"
 
           package_lower="$(printf '%s' "$PACKAGE" | tr '[:upper:]' '[:lower:]')"
           package_enc="$(printf '%s' "$package_lower" | jq -sRr @uri | sed 's/%0A$//')"
