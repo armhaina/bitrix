@@ -130,5 +130,3 @@ pre-commit:
       priority: 3
       run: make phpcs && git add {staged_files}
 ```
-
-[1]: https://www.1c-bitrix.ru/products/cms
