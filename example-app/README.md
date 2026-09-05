@@ -72,7 +72,7 @@ $DBDebug = (bool)$_ENV["APP_DEBUG"];
 $DBDebugToFile = (bool)$_ENV["APP_DEBUG"];
 ```
 
-# Документация и пакеты 🎨
+# Документация, пакеты и команды 🎨
 
 В данном пункте представлены полезные ссылки на документацию и пакеты для более комфортной разработки.
 
@@ -129,4 +129,30 @@ pre-commit:
     phpcs:
       priority: 3
       run: make phpcs && git add {staged_files}
+```
+
+## Команды
+
+### Загрузить БД в контейнер (mariadb)
+
+```bash
+docker exec -i $(basename $(pwd))-database-1 sh -c 'mariadb -u root --password="$MARIADB_ROOT_PASSWORD" sitemanager' < ./docker/database/db.sql
+```
+
+### Выгрузить БД из контейнера (mariadb)
+
+```bash
+docker exec $(basename $(pwd))-database-1 sh -c 'exec mariadb-dump --all-databases -uroot -p"$MARIADB_ROOT_PASSWORD"' > ./docker/database/db.sql
+```
+
+### Загрузить БД в контейнер (mysql)
+
+```bash
+docker exec -i $(basename $(pwd))-database-1 sh -c 'mysql -u root --password="$MYSQL_ROOT_PASSWORD" sitemanager' < ./docker/database/db.sql
+```
+
+### Выгрузить БД из контейнера (mysql)
+
+```bash
+docker exec $(basename $(pwd))-database-1 sh -c 'exec mysqldump --all-databases -uroot -p"$MYSQL_ROOT_PASSWORD"' > ./docker/database/db.sql
 ```
