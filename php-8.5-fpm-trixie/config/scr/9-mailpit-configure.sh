@@ -9,7 +9,6 @@ if [[ ${MAILPIT_ENABLED:-0} != 1 ]]; then
 elif grep -q 'mailpit sendmail' "$ini"; then
   log success "Почта PHP уже направлена в Mailpit"
 else
-  MAILPIT_HOST=${MAILPIT_HOST:-mailpit:1025}
   printf '\n[mail]\nsendmail_path = "/usr/local/bin/mailpit sendmail --smtp-addr %s"\n' "$MAILPIT_HOST" >> "$ini"
   log success "Письма PHP будут попадать в Mailpit ($MAILPIT_HOST)"
 fi

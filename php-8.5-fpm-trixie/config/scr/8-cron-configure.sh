@@ -1,8 +1,8 @@
 #!/bin/bash
-# Вешает поминутный запуск bitrix/php_interface/cron_events.php, если CRON_ENABLED=1.
+# Вешает поминутный запуск bitrix/php_interface/cron_events.php, если BITRIX_CRON_ENABLED=1.
 # Без крона агенты Битрикса (почта, отложенные задания) в контейнере не выполняются.
 
-if [[ ${CRON_ENABLED:-0} != 1 ]]; then
+if [[ $BITRIX_CRON_ENABLED != 1 ]]; then
   log warning "Крон выключен — агенты Битрикса запускаться не будут"
 else
   log info "Включаю агенты Битрикса: cron_events.php каждую минуту…"
