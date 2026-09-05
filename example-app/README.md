@@ -90,7 +90,7 @@ $DBDebugToFile = (bool)$_ENV["APP_DEBUG"];
 
 ### Миграции БД
 
-1. [sprint.migration](https://github.com/andreyryabin/sprint.migration) — Миграции БД.
+1. [sprint.migration](https://github.com/andreyryabin/sprint.migration) — Миграции БД. Для корректной работы команд из файла [makefile](makefile) поместите следующий [файл вызова модуля миграций](attachment/commands/migrate) в директорию `/bin` из корня проекта (если нет директории, то создайте ее вручную).
 
 ### Lefthook (git)
 
