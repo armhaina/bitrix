@@ -68,7 +68,7 @@ jobs:
               {
                 include: split("\n")
                   | map(select(length > 0))
-                  | map({image: ., platforms: "linux/amd64"})
+                  | map({image: ., platforms: "linux/amd64,linux/arm64"})
               }
             '
           )"
@@ -83,7 +83,8 @@ jobs:
     name: Build ${{ matrix.image }}
     # ОС раннера GitHub: свежий Ubuntu, на нём есть Docker
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    # Multi-arch (QEMU) сборка PHP-расширений дольше обычной
+    timeout-minutes: 120
     # Как запускать несколько вариантов одной и той же job
     strategy:
       # false: падение одного образа не отменяет сборку второго
@@ -146,6 +147,12 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Set up QEMU
+        # Эмуляция чужих архитектур на ubuntu-latest (amd64) для multi-arch сборки
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+
       - name: Set up Docker Buildx
         # Подключает Buildx — современный сборщик Docker с кэшем, BuildKit и manifest list
         uses: docker/setup-buildx-action@v3
@@ -182,7 +189,7 @@ jobs:
           context: ./${{ matrix.image }}
           # Путь к Dockerfile внутри этого каталога
           file: ./${{ matrix.image }}/Dockerfile
-          # Нативная архитектура раннера (ubuntu-latest → linux/amd64), без QEMU
+          # Несколько платформ → Buildx собирает manifest list (один тег, несколько архитектур)
           platforms: ${{ matrix.platforms }}
           # true на push — публикуем в ghcr.io; false на PR — только проверка сборки
           push: ${{ env.PUSH_IMAGE == 'true' }}
